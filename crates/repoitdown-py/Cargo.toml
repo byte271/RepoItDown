@@ -1,0 +1,24 @@
+[package]
+name = "repoitdown-py"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Python bindings for RepoItDown — AST-aware codebase topology for LLM context windows"
+readme = "../../README.md"
+keywords = ["python", "llm", "codebase", "ast", "topology"]
+categories = ["development-tools", "ai"]
+
+[lib]
+name = "repoitdown"
+crate-type = ["cdylib"]
+
+[dependencies]
+repoitdown-core = { path = "../repoitdown-core" }
+pyo3 = { workspace = true, features = ["extension-module"] }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

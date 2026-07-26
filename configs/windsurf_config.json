@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "repoitdown": {
+      "name": "RepoItDown",
+      "description": "AST-aware codebase topology for LLM context windows",
+      "command": "repoitdown-mcp",
+      "args": []
+    }
+  }
+}

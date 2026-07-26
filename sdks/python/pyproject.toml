@@ -1,0 +1,33 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "repoitdown"
+version = "0.1.0"
+description = "AST-aware codebase topology for LLM context windows"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+keywords = ["llm", "codebase", "ast", "topology", "tree-sitter"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Repository = "https://github.com/byte271/RepoItDown"
+
+[tool.maturin]
+manifest-path = "../../crates/repoitdown-py/Cargo.toml"
+module-name = "repoitdown"
+python-source = "."
+features = ["pyo3/extension-module"]

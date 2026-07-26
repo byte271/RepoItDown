@@ -1,0 +1,78 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/repoitdown-core",
+    "crates/repoitdown-cli",
+    "crates/repoitdown-mcp",
+    "crates/repoitdown-server",
+    "crates/repoitdown-py",
+]
+
+[workspace.lints.clippy]
+multiple_crate_versions = "allow"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/byte271/RepoItDown"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# --- Error handling ---
+thiserror = "2.0"
+
+# --- CLI ---
+clap = { version = "4.5", features = ["derive"] }
+
+# --- Async runtime ---
+tokio = { version = "1.42", features = ["rt-multi-thread", "macros", "fs", "io-util"] }
+
+# --- Parallelism ---
+rayon = "1.10"
+
+# --- Tree-sitter ---
+tree-sitter = "0.24"
+tree-sitter-rust = "0.23"
+tree-sitter-python = "0.23"
+tree-sitter-typescript = "0.23"
+tree-sitter-go = "0.23"
+
+# --- File walking (gitignore-aware) ---
+ignore = "0.4"
+
+# --- Graph algorithms ---
+petgraph = "0.7"
+
+# --- Token counting ---
+tiktoken-rs = "0.6"
+
+# --- Logging ---
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# --- Serialization (MCP server, config) ---
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# --- Regex (fallback skeletonizer, secret patterns) ---
+regex = "1.11"
+
+# --- HTTP server (Phase 4 REST API) ---
+axum = "0.8"
+
+# --- Python bindings (Phase 4 Python SDK) ---
+pyo3 = "0.23"
+
+# --- Benchmarking ---
+criterion = "0.5"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[profile.dev]
+opt-level = 0

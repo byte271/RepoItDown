@@ -1,0 +1,25 @@
+[package]
+name = "repoitdown-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CLI for RepoItDown — AST-aware codebase topology for LLM context windows"
+readme = "../../README.md"
+keywords = ["llm", "codebase", "ast", "topology", "tree-sitter", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+# SAFETY: This crate contains the only unsafe blocks in the project,
+# limited to tree-sitter grammar FFI bindings. All other unsafe is forbidden.
+
+[[bin]]
+name = "repoitdown"
+path = "src/main.rs"
+
+[dependencies]
+repoitdown-core = { path = "../repoitdown-core" }
+
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

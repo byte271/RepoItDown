@@ -1,0 +1,30 @@
+# Rust build artifacts
+target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tree-sitter grammar submodules (vendored, not committed)
+grammars/
+
+# Environment
+.env
+.env.local
+
+<<<<<<< HEAD
+# Freebuff local cache
+.freebuff/
+
+=======
+>>>>>>> c20d65aa8d76ff8b3f5036648a4ee5c4b7b9404a
+# Fuzz corpus
+fuzz/corpus/
+fuzz/artifacts/

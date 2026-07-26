@@ -1,0 +1,21 @@
+[package]
+name = "repoitdown-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "MCP server for RepoItDown - AST-aware codebase topology for LLM context windows"
+readme = "../../DESIGN.md"
+keywords = ["mcp", "codebase", "topology", "llm", "ast"]
+categories = ["development-tools", "ai"]
+
+[dependencies]
+repoitdown-core = { path = "../repoitdown-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+[lints]
+workspace = true

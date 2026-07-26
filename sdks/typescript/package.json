@@ -1,0 +1,25 @@
+{
+  "name": "repoitdown",
+  "version": "0.1.0",
+  "description": "AST-aware codebase topology for LLM context windows — TypeScript/Node.js SDK",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test index.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/byte271/RepoItDown"
+  },
+  "keywords": ["llm", "codebase", "ast", "topology", "repoitdown"],
+  "license": "Apache-2.0",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "bin/"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

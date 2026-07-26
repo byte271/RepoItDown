@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RepoItDown — CDG Visualizer</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d2991d;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --pink: #f778ba;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .toolbar h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .toolbar h1 span { color: var(--accent); }
+  .toolbar label {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .toolbar input[type="file"] { display: none; }
+  .toolbar button, .toolbar .btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .toolbar button:hover, .toolbar .btn:hover {
+    background: var(--border);
+    border-color: var(--muted);
+  }
+  .toolbar button.accent {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
+  }
+  .toolbar button.accent:hover { background: #388bfd; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-dot.import { background: var(--muted); }
+  .legend-dot.call { background: var(--green); }
+  .legend-dot.extends { background: var(--accent); }
+  .legend-dot.implements { background: var(--purple); }
+  .legend-dot.interface-extends { background: var(--pink); }
+
+  #graph {
+    flex: 1;
+    cursor: grab;
+    position: relative;
+  }
+  #graph:active { cursor: grabbing; }
+  #graph svg { width: 100%; height: 100%; display: block; }
+
+  .link {
+    fill: none;
+    stroke-opacity: 0.35;
+    stroke-width: 1.2px;
+    transition: stroke-opacity .2s, stroke-width .2s;
+  }
+  .link:hover { stroke-opacity: 0.8; stroke-width: 2.5px; }
+  .link.Import { stroke: var(--muted); }
+  .link.Call { stroke: var(--green); }
+  .link.Extends { stroke: var(--accent); }
+  .link.Implements { stroke: var(--purple); }
+  .link.InterfaceExtends { stroke: var(--pink); }
+
+  .node circle {
+    stroke-width: 1.5px;
+    transition: stroke-width .15s;
+    cursor: pointer;
+  }
+  .node circle:hover { stroke: #fff; stroke-width: 2.5px; }
+  .node text {
+    font-size: 11px;
+    fill: var(--text);
+    pointer-events: none;
+    text-shadow: 0 0 4px var(--bg);
+  }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    opacity: 0;
+    transition: opacity .15s;
+    z-index: 100;
+    max-width: 320px;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip .name { font-weight: 600; font-size: 14px; }
+  .tooltip .file { color: var(--muted); font-size: 12px; font-family: monospace; }
+  .tooltip .score { color: var(--accent); }
+  .tooltip .kind { color: var(--orange); }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--muted);
+  }
+  .empty-state h2 { font-size: 24px; color: var(--text); }
+  .empty-state p { font-size: 14px; max-width: 400px; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>RepoItDown<span> · CDG Visualizer</span></h1>
+  <label class="btn" for="fileInput">📂 Load JSON</label>
+  <input type="file" id="fileInput" accept=".json">
+  <button id="zoomIn" title="Zoom in">🔍+</button>
+  <button id="zoomOut" title="Zoom out">🔍−</button>
+  <button id="resetBtn" title="Reset view">↺ Reset</button>
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot call"></span>Call</span>
+    <span class="legend-item"><span class="legend-dot import"></span>Import</span>
+    <span class="legend-item"><span class="legend-dot extends"></span>Extends</span>
+    <span class="legend-item"><span class="legend-dot implements"></span>Implements</span>
+    <span class="legend-item"><span class="legend-dot interface-extends"></span>I-Extends</span>
+  </div>
+</div>
+
+<div id="graph">
+  <div class="empty-state">
+    <h2>RepoItDown CDG Visualizer</h2>
+    <p>
+      Load a <code>GraphExport</code> JSON file to explore the Code Dependency Graph.
+      Generate one from the Rust API with <code>export_graph_json(files)</code>
+      or from the Python SDK with <code>rd.export_graph(path)</code>.
+    </p>
+    <p>Nodes are sized by PageRank centrality. Drag to pan, scroll to zoom.</p>
+    <label class="btn accent" for="fileInput">📂 Load Graph JSON</label>
+  </div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let currentData = null;
+let simulation = null;
+
+const scoreColor = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, 0.1]);
+const radiusScale = d3.scaleSqrt().domain([0, 0.2]).range([5, 28]).clamp(true);
+
+function edgeClass(kind) {
+  const map = {
+    'import': 'Import', 'call': 'Call', 'extends': 'Extends',
+    'implements': 'Implements', 'interface_extends': 'InterfaceExtends'
+  };
+  return map[kind] || 'Import';
+}
+
+// ---------------------------------------------------------------------------
+// Tooltip
+// ---------------------------------------------------------------------------
+const tooltip = d3.select('#tooltip');
+
+function showTooltip(event, d) {
+  tooltip
+    .classed('visible', true)
+    .html(`
+      <div class="name">${d.name}</div>
+      <div class="file">📁 ${d.file}</div>
+      <div class="kind">🏷 ${d.kind}</div>
+      <div class="score">📊 PageRank: ${d.score.toFixed(4)}</div>
+    `);
+}
+
+function moveTooltip(event) {
+  const rect = document.querySelector('#graph').getBoundingClientRect();
+  tooltip
+    .style('left', (event.clientX - rect.left + 14) + 'px')
+    .style('top', (event.clientY - rect.top - 10) + 'px');
+}
+
+function hideTooltip() { tooltip.classed('visible', false); }
+
+// ---------------------------------------------------------------------------
+// Graph render
+// ---------------------------------------------------------------------------
+function renderGraph(data) {
+  currentData = data;
+  const container = document.querySelector('#graph');
+  const emptyState = container.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  d3.select('#graph svg').remove();
+
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  const svg = d3.select('#graph')
+    .append('svg')
+    .attr('viewBox', [0, 0, width, height]);
+
+  const g = svg.append('g');
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 6])
+    .on('zoom', (event) => g.attr('transform', event.transform));
+  svg.call(zoom);
+
+  d3.select('#zoomIn').on('click', () => svg.transition().call(zoom.scaleBy, 1.4));
+  d3.select('#zoomOut').on('click', () => svg.transition().call(zoom.scaleBy, 0.7));
+  d3.select('#resetBtn').on('click', () => svg.transition().call(zoom.transform, d3.zoomIdentity));
+
+  const nodes = data.nodes.map(d => ({ ...d }));
+  const edges = data.edges.map(d => ({ ...d }));
+
+  const link = g.append('g')
+    .selectAll('line')
+    .data(edges)
+    .join('line')
+    .attr('class', d => `link ${edgeClass(d.kind)}`);
+
+  const node = g.append('g')
+    .selectAll('g')
+    .data(nodes)
+    .join('g')
+    .attr('class', 'node')
+    .call(d3.drag()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on('drag', (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      })
+    );
+
+  node.append('circle')
+    .attr('r', d => radiusScale(d.score))
+    .attr('fill', d => scoreColor(d.score))
+    .on('mouseenter', (event, d) => showTooltip(event, d))
+    .on('mousemove', moveTooltip)
+    .on('mouseleave', hideTooltip);
+
+  node.append('text')
+    .text(d => d.name.length > 24 ? d.name.slice(0, 23) + '…' : d.name)
+    .attr('dy', d => radiusScale(d.score) + 13)
+    .attr('text-anchor', 'middle');
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(edges).id(d => d.id).distance(100))
+    .force('charge', d3.forceManyBody().strength(-300))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => radiusScale(d.score) + 10))
+    .on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// File input
+// ---------------------------------------------------------------------------
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.nodes || !data.edges) {
+        alert('Invalid graph JSON: missing "nodes" or "edges" array.');
+        return;
+      }
+      renderGraph(data);
+    } catch (err) {
+      alert('Failed to parse JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+window.addEventListener('resize', () => {
+  if (currentData) {
+    const container = document.querySelector('#graph');
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    d3.select('#graph svg').attr('viewBox', [0, 0, w, h]);
+    simulation?.force('center', d3.forceCenter(w / 2, h / 2));
+    simulation?.alpha(0.3).restart();
+  }
+});
+</script>
+</body>
+</html>
