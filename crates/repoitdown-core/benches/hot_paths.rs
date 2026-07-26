@@ -1,9 +1,11 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use petgraph::graph::DiGraph;
 use repoitdown_core::ast::ParserPool;
-use repoitdown_core::graph::{page_rank, CodeGraph, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS};
+use repoitdown_core::graph::{
+    CodeGraph, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, page_rank,
+};
 use repoitdown_core::ingestion::FileEntry;
-use repoitdown_core::output::{render, RenderConfig};
+use repoitdown_core::output::{RenderConfig, render};
 use repoitdown_core::tokenizer::count_tokens;
 use repoitdown_core::types::{FileNode, Language};
 use std::path::PathBuf;
@@ -190,5 +192,11 @@ fn bench_count_tokens(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_page_rank, bench_build_graph, bench_render, bench_count_tokens);
+criterion_group!(
+    benches,
+    bench_page_rank,
+    bench_build_graph,
+    bench_render,
+    bench_count_tokens
+);
 criterion_main!(benches);

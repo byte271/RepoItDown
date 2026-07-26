@@ -12,11 +12,22 @@ static SECRET_PATTERNS: LazyLock<Vec<(Regex, &str)>> = LazyLock::new(|| {
         (r"xox[bprs]-[A-Za-z0-9-]{10,}", "Slack token"),
         (r"sk_live_[A-Za-z0-9]{20,}", "Stripe live key"),
         (r"pk_live_[A-Za-z0-9]{20,}", "Stripe publishable key"),
-        (r"-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----", "private key"),
-        (r"(?:postgres|mysql|mongodb)://[^:\s]+:[^@\s]+@", "connection string"),
+        (
+            r"-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----",
+            "private key",
+        ),
+        (
+            r"(?:postgres|mysql|mongodb)://[^:\s]+:[^@\s]+@",
+            "connection string",
+        ),
     ]
     .iter()
-    .map(|(p, label)| (Regex::new(p).expect("built-in secret regex failed to compile"), *label))
+    .map(|(p, label)| {
+        (
+            Regex::new(p).expect("built-in secret regex failed to compile"),
+            *label,
+        )
+    })
     .collect()
 });
 
@@ -47,7 +58,10 @@ fn find_redactions(source: &str) -> Vec<Redaction> {
     for (regex, label) in SECRET_PATTERNS.iter() {
         for m in regex.find_iter(source) {
             let (start, end) = (m.start(), m.end());
-            if results.iter().all(|r: &Redaction| r.end <= start || r.start >= end) {
+            if results
+                .iter()
+                .all(|r: &Redaction| r.end <= start || r.start >= end)
+            {
                 results.push(Redaction { label, start, end });
             }
         }

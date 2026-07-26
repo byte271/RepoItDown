@@ -14,9 +14,9 @@
 
 use std::collections::HashSet;
 
-use crate::graph::pagerank::{top_n_indices, DEFAULT_HUB_FRACTION};
+use crate::graph::pagerank::{DEFAULT_HUB_FRACTION, top_n_indices};
 use crate::graph::{CodeGraph, EdgeKind};
-use crate::slicing::knapsack::{build_plans, compare_by_value_density, SliceLevel, SlicePlan};
+use crate::slicing::knapsack::{SliceLevel, SlicePlan, build_plans, compare_by_value_density};
 use crate::slicing::query::BM25Index;
 use crate::slicing::skeleton::skeletonize;
 use crate::tokenizer::count_tokens;
@@ -250,7 +250,11 @@ fn allocate_with_floor(plans: &mut [SlicePlan], budget: usize) {
         // Degrade from the initial level downwards until something fits, but
         // never below `min_allowed`.
         let chosen = degrade_to_fit(plan, remaining, initial, min_allowed);
-        let cost = chosen.cost(plan.full_tokens, plan.skeleton_tokens, plan.signature_tokens);
+        let cost = chosen.cost(
+            plan.full_tokens,
+            plan.skeleton_tokens,
+            plan.signature_tokens,
+        );
         plan.level = chosen;
         remaining = remaining.saturating_sub(cost);
     }
@@ -371,10 +375,7 @@ fn k_hop_files(
     // Translate slots back to file indices.
     let mut result: HashSet<usize> = HashSet::new();
     for slot in visited {
-        let Some(fqn) = graph
-            .symbols()
-            .fqn(crate::graph::SymbolId::from_raw(slot))
-        else {
+        let Some(fqn) = graph.symbols().fqn(crate::graph::SymbolId::from_raw(slot)) else {
             continue;
         };
         for (i, node) in nodes.iter().enumerate() {
@@ -421,7 +422,11 @@ mod tests {
                 Language::Rust,
                 "pub fn hub_fn() { helper(); }\npub fn helper() { hub_fn(); }",
             ),
-            ("src/util.rs", Language::Rust, "pub fn util() { /* unrelated */ }"),
+            (
+                "src/util.rs",
+                Language::Rust,
+                "pub fn util() { /* unrelated */ }",
+            ),
         ]);
         count_tokens_for_nodes(&mut nodes);
 
@@ -451,7 +456,11 @@ mod tests {
                 Language::Rust,
                 "pub fn hub_fn() { helper(); }\npub fn helper() { hub_fn(); }",
             ),
-            ("src/util.rs", Language::Rust, "pub fn util() { /* unrelated */ }"),
+            (
+                "src/util.rs",
+                Language::Rust,
+                "pub fn util() { /* unrelated */ }",
+            ),
         ]);
         count_tokens_for_nodes(&mut nodes);
 
@@ -582,7 +591,12 @@ mod tests {
         let plans = mode.plan(&nodes, &graph, &scores, 10_000);
         let session_plan = plans
             .iter()
-            .find(|p| nodes[p.file_index].path.to_string_lossy().contains("session"))
+            .find(|p| {
+                nodes[p.file_index]
+                    .path
+                    .to_string_lossy()
+                    .contains("session")
+            })
             .unwrap();
         // session.rs is called from auth.rs, so it's a k-hop dependency and
         // should be at least Skeleton (not Signature).

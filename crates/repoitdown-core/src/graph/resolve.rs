@@ -142,14 +142,11 @@ impl SymbolTable {
 
     /// Iterates over every `(`[`SymbolId`], &[`FullyQualifiedName`]`)` pair in id order.
     pub fn iter(&self) -> impl Iterator<Item = (SymbolId, &FullyQualifiedName)> {
-        self.by_id
-            .iter()
-            .enumerate()
-            .map(|(i, fqn)| {
-                #[allow(clippy::cast_possible_truncation)]
-                let id = SymbolId(i as u32);
-                (id, fqn)
-            })
+        self.by_id.iter().enumerate().map(|(i, fqn)| {
+            #[allow(clippy::cast_possible_truncation)]
+            let id = SymbolId(i as u32);
+            (id, fqn)
+        })
     }
 
     /// Number of indexed symbols.
@@ -216,7 +213,6 @@ impl Resolver {
         }
         None
     }
-
 }
 
 /// Converts a path to forward-slash form for stable cross-platform comparison.
@@ -297,10 +293,7 @@ fn resolve_python(importer: &Path, module: &str) -> Vec<PathBuf> {
 
     if module.starts_with('.') {
         // Relative: count leading dots to determine how many levels to walk up.
-        let leading_dots = module
-            .chars()
-            .take_while(|c| *c == '.')
-            .count();
+        let leading_dots = module.chars().take_while(|c| *c == '.').count();
         let rest = &module[leading_dots..];
 
         let mut base = importer.parent().unwrap_or(Path::new(".")).to_path_buf();
@@ -359,7 +352,10 @@ fn resolve_rust(importer: &Path, module: &str) -> Vec<PathBuf> {
     // directory to start searching from.
     let (segments, start_dir) = match parse_rust_prefix(importer, module) {
         RustUse::External => return Vec::new(),
-        RustUse::Local { segments, start_dir } => (segments, start_dir),
+        RustUse::Local {
+            segments,
+            start_dir,
+        } => (segments, start_dir),
     };
 
     if segments.is_empty() {
@@ -519,11 +515,7 @@ fn resolve_go(importer: &Path, module: &str) -> Vec<PathBuf> {
 
     // Build all suffixes: for [a, b, c], produce [c, b/c, a/b/c].
     let suffixes: Vec<PathBuf> = (0..segments.len())
-        .map(|start| {
-            segments[start..]
-                .iter()
-                .collect::<PathBuf>()
-        })
+        .map(|start| segments[start..].iter().collect::<PathBuf>())
         .collect();
 
     // For each suffix, probe at every ancestor of the importer's directory.
@@ -630,10 +622,7 @@ mod tests {
         // Rust allows multiple impl blocks for the same type, each with
         // methods. Python allows a function and a class with the same name.
         // The table must index both, not silently drop one.
-        let node = make_node(
-            "a.rs",
-            vec![pub_fn("process"), pub_fn("process")],
-        );
+        let node = make_node("a.rs", vec![pub_fn("process"), pub_fn("process")]);
         let table = SymbolTable::from_files(&[node]);
         let ids = table.lookup_by_name("process");
         assert_eq!(
@@ -678,7 +667,10 @@ mod tests {
         let tmp = write_repo(&[("src/index.ts", "import React from 'react';")]);
         let r = resolver_for(&tmp, &["src/index.ts"]);
         let importer = tmp.path().join("src/index.ts");
-        assert!(r.resolve(&importer, "react", &Language::TypeScript).is_none());
+        assert!(
+            r.resolve(&importer, "react", &Language::TypeScript)
+                .is_none()
+        );
     }
 
     #[test]
@@ -691,7 +683,12 @@ mod tests {
         ]);
         let r = resolver_for(
             &tmp,
-            &["pkg/sub/mod.py", "app.py", "pkg/__init__.py", "pkg/sub/__init__.py"],
+            &[
+                "pkg/sub/mod.py",
+                "app.py",
+                "pkg/__init__.py",
+                "pkg/sub/__init__.py",
+            ],
         );
         let importer = tmp.path().join("app.py");
         let resolved = r.resolve(&importer, "pkg.sub.mod", &Language::Python);
@@ -748,7 +745,10 @@ mod tests {
             ("src/models/mod.rs", "pub mod user;"),
             ("src/models/user.rs", "pub struct User;"),
         ]);
-        let r = resolver_for(&tmp, &["src/lib.rs", "src/models/mod.rs", "src/models/user.rs"]);
+        let r = resolver_for(
+            &tmp,
+            &["src/lib.rs", "src/models/mod.rs", "src/models/user.rs"],
+        );
         let importer = tmp.path().join("src/lib.rs");
         let resolved = r.resolve(&importer, "crate::models::user", &Language::Rust);
         assert_eq!(
@@ -814,16 +814,18 @@ mod tests {
         let tmp = write_repo(&[("src/lib.rs", "use std::collections::HashMap;")]);
         let r = resolver_for(&tmp, &["src/lib.rs"]);
         let importer = tmp.path().join("src/lib.rs");
-        assert!(r
-            .resolve(&importer, "std::collections::HashMap", &Language::Rust)
-            .is_none());
+        assert!(
+            r.resolve(&importer, "std::collections::HashMap", &Language::Rust)
+                .is_none()
+        );
     }
 
     #[test]
     fn empty_module_returns_none() {
         let r = Resolver::new(std::iter::empty::<PathBuf>());
-        assert!(r
-            .resolve(Path::new("a.ts"), "", &Language::TypeScript)
-            .is_none());
+        assert!(
+            r.resolve(Path::new("a.ts"), "", &Language::TypeScript)
+                .is_none()
+        );
     }
 }

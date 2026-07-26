@@ -2,10 +2,12 @@ use std::path::Path;
 
 use crate::ast::ParserPool;
 use crate::error::Result;
-use crate::graph::{page_rank, CodeGraph, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS};
-use crate::ingestion::walker::RepoWalker;
+use crate::graph::{
+    CodeGraph, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, page_rank,
+};
 use crate::ingestion::IngestionConfig;
-use crate::output::{render, RenderConfig};
+use crate::ingestion::walker::RepoWalker;
+use crate::output::{RenderConfig, render};
 use crate::slicing::{ArchitecturalMode, SliceLevel, SlicePlan, SlicingStrategy, TaskGuidedMode};
 use crate::tokenizer::count_tokens;
 use crate::types::FileNode;
@@ -41,16 +43,24 @@ impl SliceMode {
     /// Returns an error string suitable for user display if:
     /// - The mode string is not one of `dump`, `explore`, `architect`, or `task`.
     /// - The mode is `task` but `query` is `None` or empty.
-    pub fn from_str(mode: &str, query: Option<&str>) -> std::result::Result<(Self, bool), &'static str> {
+    pub fn from_str(
+        mode: &str,
+        query: Option<&str>,
+    ) -> std::result::Result<(Self, bool), &'static str> {
         match mode {
             "dump" | "explore" => Ok((Self::None, false)),
             "architect" => Ok((Self::Architectural, true)),
-            "task" => query
-                .filter(|s| !s.trim().is_empty())
-                .map_or(
-                    Err("mode 'task' requires a non-empty 'query' parameter"),
-                    |q| Ok((Self::Task { query: q.to_owned() }, true)),
-                ),
+            "task" => query.filter(|s| !s.trim().is_empty()).map_or(
+                Err("mode 'task' requires a non-empty 'query' parameter"),
+                |q| {
+                    Ok((
+                        Self::Task {
+                            query: q.to_owned(),
+                        },
+                        true,
+                    ))
+                },
+            ),
             _ => Err("unknown mode. Valid modes: dump, explore, architect, task"),
         }
     }
@@ -171,7 +181,11 @@ impl Pipeline {
             .collect();
 
         if !matches!(self.slice_mode, SliceMode::None) {
-            apply_slicing(&mut files, &self.slice_mode, self.slice_budget.or(self.render_config.max_tokens));
+            apply_slicing(
+                &mut files,
+                &self.slice_mode,
+                self.slice_budget.or(self.render_config.max_tokens),
+            );
         }
 
         files.sort_by(|a, b| a.path.cmp(&b.path));
@@ -196,9 +210,7 @@ fn apply_slicing(files: &mut Vec<FileNode>, mode: &SliceMode, budget: Option<usi
     );
 
     let plans: Vec<SlicePlan> = match mode {
-        SliceMode::Architectural => {
-            ArchitecturalMode.plan(files, &graph, &scores, budget)
-        }
+        SliceMode::Architectural => ArchitecturalMode.plan(files, &graph, &scores, budget),
         SliceMode::Task { query } => {
             TaskGuidedMode::new(query.clone()).plan(files, &graph, &scores, budget)
         }
@@ -291,7 +303,7 @@ impl Default for Pipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use std::fs;
     use tempfile::TempDir;
 
@@ -357,9 +369,7 @@ mod tests {
     fn dump_mode_unchanged_by_phase_2() {
         // dump mode (SliceMode::None) must produce identical output to Phase 1:
         // full source for every file, no skeletonization, no `/* ... */`.
-        let tmp = write_repo(&[
-            ("src/lib.rs", "pub fn add(a: i32, b: i32) -> i32 { a + b }"),
-        ]);
+        let tmp = write_repo(&[("src/lib.rs", "pub fn add(a: i32, b: i32) -> i32 { a + b }")]);
         let pipeline = Pipeline::new();
         let output = pipeline.run(tmp.path()).unwrap();
         assert!(output.contains("pub fn add"));
@@ -403,7 +413,10 @@ mod tests {
                 "src/lib.rs",
                 "pub fn main() { helper(); }\npub fn helper() { main(); }",
             ),
-            ("src/util.rs", "pub fn helper_two() { let x = 1; let y = 2; x + y }"),
+            (
+                "src/util.rs",
+                "pub fn helper_two() { let x = 1; let y = 2; x + y }",
+            ),
         ]);
         let pipeline = Pipeline::new()
             .with_slice_mode(SliceMode::Architectural)
@@ -471,10 +484,7 @@ mod tests {
         // Without a language filter, all files appear regardless of extension.
         // (Language filtering via --languages is a CLI-level concern; the
         // pipeline itself doesn't filter.)
-        let tmp = write_repo(&[
-            ("src/a.rs", "pub fn a() {}"),
-            ("src/b.py", "def b(): pass"),
-        ]);
+        let tmp = write_repo(&[("src/a.rs", "pub fn a() {}"), ("src/b.py", "def b(): pass")]);
         let pipeline = Pipeline::new().with_render_config(RenderConfig {
             collapse: false,
             contract_view: false,
@@ -498,7 +508,10 @@ mod tests {
                 "src/lib.rs",
                 "pub fn main() { helper(); }\npub fn helper() { main(); }",
             ),
-            ("src/app.py", "def greet(name):\n    msg = f'hi {name}'\n    return msg\n"),
+            (
+                "src/app.py",
+                "def greet(name):\n    msg = f'hi {name}'\n    return msg\n",
+            ),
         ]);
         let pipeline = Pipeline::new()
             .with_slice_mode(SliceMode::Architectural)

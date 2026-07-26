@@ -249,7 +249,11 @@ mod tests {
         // (e.g. `/* ... */`), the re-parse would fail or produce errors.
         let src = "def greet(name):\n    msg = f\"hi {name}\"\n    return msg\n";
         let out = skeletonize(src, &Language::Python, Path::new("a.py"));
-        let reparse = parse_source(&tree_sitter_python::LANGUAGE.into(), &out, Path::new("a.py"));
+        let reparse = parse_source(
+            &tree_sitter_python::LANGUAGE.into(),
+            &out,
+            Path::new("a.py"),
+        );
         assert!(
             reparse.is_ok(),
             "skeletonized Python must be valid syntax, got: {out}"
@@ -310,7 +314,8 @@ mod tests {
     #[test]
     fn skeletonize_preserves_signatures_under_extreme_budget() {
         // Even with many bodies, every signature should remain.
-        let src = "pub fn a() { let x = 1; }\npub fn b() { let y = 2; }\npub fn c() { let z = 3; }\n";
+        let src =
+            "pub fn a() { let x = 1; }\npub fn b() { let y = 2; }\npub fn c() { let z = 3; }\n";
         let out = skeletonize(src, &Language::Rust, Path::new("a.rs"));
         assert!(out.contains("pub fn a"));
         assert!(out.contains("pub fn b"));
@@ -332,8 +337,7 @@ mod tests {
         // The outer body becomes /* ... */, subsuming the inner closure's body.
         let placeholder_count = out.matches("/* ... */").count();
         assert_eq!(
-            placeholder_count,
-            1,
+            placeholder_count, 1,
             "nested body should be subsumed, got {out}"
         );
     }

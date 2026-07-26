@@ -17,7 +17,7 @@
 //!   -d '{"repo_path": ".", "mode": "architect", "max_tokens": 8000}'
 //! ```
 
-use axum::{extract::State, http::StatusCode, routing, Json, Router};
+use axum::{Json, Router, extract::State, http::StatusCode, routing};
 use repoitdown_core::Pipeline;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
@@ -74,7 +74,12 @@ async fn topology(
 ) -> Result<Json<TopologyResponse>, (StatusCode, Json<ErrorResponse>)> {
     let mut pipeline = Pipeline::new();
     pipeline
-        .configure(&req.mode, req.query.as_deref(), req.max_tokens, !req.no_collapse)
+        .configure(
+            &req.mode,
+            req.query.as_deref(),
+            req.max_tokens,
+            !req.no_collapse,
+        )
         .map_err(|msg| {
             (
                 StatusCode::BAD_REQUEST,
@@ -86,7 +91,11 @@ async fn topology(
         })?;
 
     let repo_path = PathBuf::from(&req.repo_path);
-    info!("running pipeline on {} with mode {}", repo_path.display(), req.mode);
+    info!(
+        "running pipeline on {} with mode {}",
+        repo_path.display(),
+        req.mode
+    );
 
     let output = tokio::task::spawn_blocking(move || pipeline.run(&repo_path))
         .await
@@ -110,9 +119,8 @@ async fn topology(
         })?;
 
     let files = output.matches("\n```").count();
-    let tokens = repoitdown_core::count_tokens(&output).unwrap_or_else(|_| {
-        (output.split_whitespace().count() as f64 * 1.3) as usize
-    });
+    let tokens = repoitdown_core::count_tokens(&output)
+        .unwrap_or_else(|_| (output.split_whitespace().count() as f64 * 1.3) as usize);
 
     Ok(Json(TopologyResponse {
         output,
@@ -148,10 +156,12 @@ fn main() -> ExitCode {
     info!("RepoItDown REST API server listening on http://{addr}");
 
     rt.block_on(async {
-        let listener = tokio::net::TcpListener::bind(addr).await.unwrap_or_else(|e| {
-            eprintln!("failed to bind to {addr}: {e}");
-            std::process::exit(1);
-        });
+        let listener = tokio::net::TcpListener::bind(addr)
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("failed to bind to {addr}: {e}");
+                std::process::exit(1);
+            });
         axum::serve(listener, app).await.unwrap_or_else(|e| {
             eprintln!("server error: {e}");
             std::process::exit(1);
@@ -213,9 +223,7 @@ mod tests {
                     .uri("/api/v1/topology")
                     .method("POST")
                     .header("content-type", "application/json")
-                    .body(Body::from(
-                        r#"{"repo_path": ".", "mode": "invalid_mode"}"#,
-                    ))
+                    .body(Body::from(r#"{"repo_path": ".", "mode": "invalid_mode"}"#))
                     .unwrap(),
             )
             .await
@@ -231,9 +239,7 @@ mod tests {
                     .uri("/api/v1/topology")
                     .method("POST")
                     .header("content-type", "application/json")
-                    .body(Body::from(
-                        r#"{"repo_path": ".", "max_tokens": 0}"#,
-                    ))
+                    .body(Body::from(r#"{"repo_path": ".", "max_tokens": 0}"#))
                     .unwrap(),
             )
             .await

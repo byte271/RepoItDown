@@ -105,7 +105,12 @@ impl Default for ParserPool {
 
 /// Rough token estimate via word-count heuristic. The precise count is
 /// computed later by `count_tokens`; this is a fast pre-pass for parallelism.
-#[allow(clippy::cast_precision_loss, clippy::cast_sign_loss, clippy::cast_possible_truncation, reason = "word-count heuristic inherently uses approximate floating ops")]
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    reason = "word-count heuristic inherently uses approximate floating ops"
+)]
 fn estimate_tokens(source: &str) -> usize {
     let word_count = source.split_whitespace().count();
     (word_count as f64 * 1.3) as usize

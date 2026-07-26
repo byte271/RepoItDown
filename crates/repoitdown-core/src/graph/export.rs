@@ -8,7 +8,9 @@
 //! - Nodes with name, file path, PageRank score, and symbol kind
 //! - Edges with source/target node indices, edge kind, and weight
 
-use crate::graph::{page_rank, CodeGraph, EdgeKind, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS};
+use crate::graph::{
+    CodeGraph, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, EdgeKind, page_rank,
+};
 use crate::types::FileNode;
 use petgraph::visit::EdgeRef;
 use serde::Serialize;
@@ -76,7 +78,10 @@ pub fn export_graph_json(files: &[FileNode]) -> Option<GraphExport> {
         .flat_map(|node| {
             let file = node.path.display().to_string();
             node.symbols.iter().map(move |s| {
-                ((file.clone(), s.name().to_string()), s.kind_label().to_string())
+                (
+                    (file.clone(), s.name().to_string()),
+                    s.kind_label().to_string(),
+                )
             })
         })
         .collect();
@@ -154,26 +159,29 @@ mod tests {
 
     #[test]
     fn export_with_call_edges_produces_json() {
-        let nodes = parse(&[
-            (
-                "src/lib.rs",
-                Language::Rust,
-                "pub fn main() { helper(); }\npub fn helper() {}",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/lib.rs",
+            Language::Rust,
+            "pub fn main() { helper(); }\npub fn helper() {}",
+        )]);
         let export = export_graph_json(&nodes).unwrap();
         assert!(export.node_count >= 2);
         assert!(export.edge_count >= 1);
         // All scores should be non-negative and sum to ~1.0.
         let sum: f64 = export.nodes.iter().map(|n| n.score).sum();
-        assert!((sum - 1.0).abs() < 0.01, "PageRank scores should sum to ~1.0, got {sum}");
+        assert!(
+            (sum - 1.0).abs() < 0.01,
+            "PageRank scores should sum to ~1.0, got {sum}"
+        );
     }
 
     #[test]
     fn export_is_json_serializable() {
-        let nodes = parse(&[
-            ("src/types.ts", Language::TypeScript, "export class A {}\nexport class B extends A {}"),
-        ]);
+        let nodes = parse(&[(
+            "src/types.ts",
+            Language::TypeScript,
+            "export class A {}\nexport class B extends A {}",
+        )]);
         let export = export_graph_json(&nodes).unwrap();
         let json = serde_json::to_string(&export).unwrap();
         assert!(json.contains("\"nodes\""));

@@ -1,7 +1,9 @@
 use repoitdown_core::Pipeline;
-use repoitdown_mcp::mcp_tool;
-use repoitdown_mcp::protocol::{extract_id, read_message, write_error, write_message, write_response, JsonrpcError};
 use repoitdown_mcp::ToolCallError;
+use repoitdown_mcp::mcp_tool;
+use repoitdown_mcp::protocol::{
+    JsonrpcError, extract_id, read_message, write_error, write_message, write_response,
+};
 use serde_json::json;
 use std::io::{self, BufReader, Write};
 use std::process::ExitCode;
@@ -47,11 +49,7 @@ fn main() -> ExitCode {
             Err(e) => {
                 warn!("failed to parse JSON-RPC message: {e}");
                 if let Some(id) = extract_id(&message) {
-                    write_error(
-                        &mut writer,
-                        &id,
-                        JsonrpcError::new(-32700, "Parse error"),
-                    ).ok();
+                    write_error(&mut writer, &id, JsonrpcError::new(-32700, "Parse error")).ok();
                 }
                 continue;
             }
@@ -101,11 +99,9 @@ fn main() -> ExitCode {
                             write_error(
                                 &mut writer,
                                 req_id,
-                                JsonrpcError::new(
-                                    -32602,
-                                    "Missing required field: params.name",
-                                ),
-                            ).ok();
+                                JsonrpcError::new(-32602, "Missing required field: params.name"),
+                            )
+                            .ok();
                         }
                         continue;
                     }
@@ -117,7 +113,8 @@ fn main() -> ExitCode {
                                 &mut writer,
                                 req_id,
                                 JsonrpcError::new(tool_err.code, tool_err.message),
-                            ).ok();
+                            )
+                            .ok();
                         }
                         continue;
                     }
@@ -138,7 +135,8 @@ fn main() -> ExitCode {
                                 &mut writer,
                                 req_id,
                                 JsonrpcError::new(err.code, err.message),
-                            ).ok();
+                            )
+                            .ok();
                         }
                     }
                 }
@@ -151,7 +149,8 @@ fn main() -> ExitCode {
                         &mut writer,
                         req_id,
                         JsonrpcError::new(-32601, format!("Method not found: {method}")),
-                    ).ok();
+                    )
+                    .ok();
                 }
             }
         }
@@ -160,7 +159,9 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn handle_tool_call(params: Option<&serde_json::Value>) -> Result<serde_json::Value, ToolCallError> {
+fn handle_tool_call(
+    params: Option<&serde_json::Value>,
+) -> Result<serde_json::Value, ToolCallError> {
     let params = params.ok_or_else(|| ToolCallError::invalid_params("missing tool arguments"))?;
 
     let repo_path = params
@@ -175,18 +176,23 @@ fn handle_tool_call(params: Option<&serde_json::Value>) -> Result<serde_json::Va
         .and_then(|v| v.as_str())
         .unwrap_or("dump");
 
-    let query = params
-        .get("query")
-        .and_then(|v| v.as_str());
+    let query = params.get("query").and_then(|v| v.as_str());
 
-    let max_tokens = params.get("max_tokens").and_then(|v| v.as_u64()).map(|v| v as usize);
+    let max_tokens = params
+        .get("max_tokens")
+        .and_then(|v| v.as_u64())
+        .map(|v| v as usize);
 
     let mut pipeline = Pipeline::new();
     pipeline
         .configure(mode_str, query, max_tokens, true)
         .map_err(ToolCallError::invalid_params)?;
 
-    info!("running pipeline on {} with mode {}", repo_path.display(), mode_str);
+    info!(
+        "running pipeline on {} with mode {}",
+        repo_path.display(),
+        mode_str
+    );
 
     match pipeline.run(&repo_path) {
         Ok(output) => {

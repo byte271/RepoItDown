@@ -105,7 +105,8 @@ impl CodeGraph {
             // in the importer to every named (or all, for wildcard) exported
             // symbol in the imported file.
             for import in &node.imports {
-                let Some(target_path) = resolver.resolve(&node.path, &import.module, &node.language)
+                let Some(target_path) =
+                    resolver.resolve(&node.path, &import.module, &node.language)
                 else {
                     continue;
                 };
@@ -151,7 +152,13 @@ impl CodeGraph {
 
                 for src in &importer_ids {
                     for dst in &targets {
-                        add_edge(&mut graph, &mut seen, node_of[src.raw()], node_of[dst.raw()], EdgeKind::Import);
+                        add_edge(
+                            &mut graph,
+                            &mut seen,
+                            node_of[src.raw()],
+                            node_of[dst.raw()],
+                            EdgeKind::Import,
+                        );
                     }
                 }
             }
@@ -222,22 +229,25 @@ fn add_call_edges(
             continue;
         }
 
-        let source_ids: Vec<SymbolId> = call
-            .enclosing_symbol
-            .as_ref()
-            .map_or_else(
-                || importer_ids.to_vec(),
-                |enclosing| {
-                    table
-                        .lookup(&FullyQualifiedName::new(node.path.clone(), enclosing))
-                        .to_vec()
-                },
-            );
+        let source_ids: Vec<SymbolId> = call.enclosing_symbol.as_ref().map_or_else(
+            || importer_ids.to_vec(),
+            |enclosing| {
+                table
+                    .lookup(&FullyQualifiedName::new(node.path.clone(), enclosing))
+                    .to_vec()
+            },
+        );
 
         for src in &source_ids {
             for &dst in callee_ids {
                 if dst.raw() < node_of.len() {
-                    add_edge(graph, seen, node_of[src.raw()], node_of[dst.raw()], EdgeKind::Call);
+                    add_edge(
+                        graph,
+                        seen,
+                        node_of[src.raw()],
+                        node_of[dst.raw()],
+                        EdgeKind::Call,
+                    );
                 }
             }
         }
@@ -265,18 +275,36 @@ fn add_inheritance_edges(
         if let crate::types::Symbol::Class(class) = symbol {
             if let Some(extends) = &class.extends {
                 for dst in table.lookup_by_name(extends) {
-                    add_edge(graph, seen, source_idx, node_of[dst.raw()], EdgeKind::Extends);
+                    add_edge(
+                        graph,
+                        seen,
+                        source_idx,
+                        node_of[dst.raw()],
+                        EdgeKind::Extends,
+                    );
                 }
             }
             for impl_name in &class.implements {
                 for dst in table.lookup_by_name(impl_name) {
-                    add_edge(graph, seen, source_idx, node_of[dst.raw()], EdgeKind::Implements);
+                    add_edge(
+                        graph,
+                        seen,
+                        source_idx,
+                        node_of[dst.raw()],
+                        EdgeKind::Implements,
+                    );
                 }
             }
         } else if let crate::types::Symbol::Interface(iface) = symbol {
             for ext in &iface.extends {
                 for dst in table.lookup_by_name(ext) {
-                    add_edge(graph, seen, source_idx, node_of[dst.raw()], EdgeKind::InterfaceExtends);
+                    add_edge(
+                        graph,
+                        seen,
+                        source_idx,
+                        node_of[dst.raw()],
+                        EdgeKind::InterfaceExtends,
+                    );
                 }
             }
         }
@@ -330,13 +358,11 @@ mod tests {
 
     #[test]
     fn builds_graph_with_call_edge() {
-        let nodes = parse(&[
-            (
-                "src/lib.rs",
-                Language::Rust,
-                "pub fn main() { helper(); }\npub fn helper() {}",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/lib.rs",
+            Language::Rust,
+            "pub fn main() { helper(); }\npub fn helper() {}",
+        )]);
         let g = CodeGraph::build(&nodes);
         // Both `main` and `helper` are exported; main calls helper.
         assert!(g.edge_count() >= 1);
@@ -352,13 +378,11 @@ mod tests {
         // With the enclosing-symbol fix, a call inside `main()` should create
         // exactly ONE Call edge from `main` to the callee — not one edge per
         // exported symbol in the file.
-        let nodes = parse(&[
-            (
-                "src/lib.rs",
-                Language::Rust,
-                "pub fn alpha() { helper(); }\npub fn beta() {}\npub fn gamma() {}\npub fn helper() {}",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/lib.rs",
+            Language::Rust,
+            "pub fn alpha() { helper(); }\npub fn beta() {}\npub fn gamma() {}\npub fn helper() {}",
+        )]);
         let g = CodeGraph::build(&nodes);
 
         // Count Call edges: should be exactly 1 (alpha → helper), not 3
@@ -385,13 +409,11 @@ mod tests {
 
     #[test]
     fn builds_graph_with_extends_edge() {
-        let nodes = parse(&[
-            (
-                "src/types.ts",
-                Language::TypeScript,
-                "export class Animal {}\nexport class Dog extends Animal {}",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/types.ts",
+            Language::TypeScript,
+            "export class Animal {}\nexport class Dog extends Animal {}",
+        )]);
         let g = CodeGraph::build(&nodes);
         let has_extends = g
             .inner()
@@ -403,13 +425,11 @@ mod tests {
     #[test]
     fn deduplicates_parallel_edges() {
         // Two calls to the same function should produce one Call edge.
-        let nodes = parse(&[
-            (
-                "src/lib.rs",
-                Language::Rust,
-                "pub fn main() { helper(); helper(); }\npub fn helper() {}",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/lib.rs",
+            Language::Rust,
+            "pub fn main() { helper(); helper(); }\npub fn helper() {}",
+        )]);
         let g = CodeGraph::build(&nodes);
         let call_edges = g
             .inner()
@@ -421,13 +441,11 @@ mod tests {
 
     #[test]
     fn handles_cycles_without_panicking() {
-        let nodes = parse(&[
-            (
-                "src/a.rs",
-                Language::Rust,
-                "pub fn a() { b(); }\npub fn b() { a(); }",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/a.rs",
+            Language::Rust,
+            "pub fn a() { b(); }\npub fn b() { a(); }",
+        )]);
         // This builds a cyclic graph (a → b → a). It must not panic.
         let g = CodeGraph::build(&nodes);
         assert!(g.node_count() >= 2);
@@ -437,13 +455,11 @@ mod tests {
 
     #[test]
     fn drops_unresolvable_imports() {
-        let nodes = parse(&[
-            (
-                "src/lib.rs",
-                Language::Rust,
-                "use std::collections::HashMap;\npub fn main() {}",
-            ),
-        ]);
+        let nodes = parse(&[(
+            "src/lib.rs",
+            Language::Rust,
+            "use std::collections::HashMap;\npub fn main() {}",
+        )]);
         let g = CodeGraph::build(&nodes);
         // No Import edges because `std::collections::HashMap` is external.
         let import_edges = g

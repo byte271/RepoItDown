@@ -19,9 +19,9 @@ pub mod pagerank;
 pub mod resolve;
 
 pub use builder::{CodeGraph, EdgeKind};
-pub use export::{export_graph_json, GraphEdge, GraphExport, GraphNode};
+pub use export::{GraphEdge, GraphExport, GraphNode, export_graph_json};
 pub use pagerank::{
-    page_rank, top_n_indices, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_HUB_FRACTION,
-    DEFAULT_MAX_ITERATIONS,
+    DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_HUB_FRACTION, DEFAULT_MAX_ITERATIONS, page_rank,
+    top_n_indices,
 };
 pub use resolve::{FullyQualifiedName, Resolver, SymbolId, SymbolTable};

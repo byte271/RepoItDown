@@ -356,7 +356,10 @@ mod tests {
         let nodes = [
             node_with(
                 "src/auth.rs",
-                vec![fn_symbol("login", Some("Authenticate a user by credentials"))],
+                vec![fn_symbol(
+                    "login",
+                    Some("Authenticate a user by credentials"),
+                )],
             ),
             node_with(
                 "src/util.rs",
@@ -364,7 +367,10 @@ mod tests {
             ),
             node_with(
                 "src/db.rs",
-                vec![fn_symbol("query_users", Some("Fetch users from the database"))],
+                vec![fn_symbol(
+                    "query_users",
+                    Some("Fetch users from the database"),
+                )],
             ),
         ];
         let idx = BM25Index::from_files(&nodes);

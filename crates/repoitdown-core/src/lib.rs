@@ -33,16 +33,14 @@ pub mod util;
 
 pub use error::{Error, Result};
 pub use graph::{
-    export_graph_json, page_rank, top_n_indices, CodeGraph, EdgeKind, FullyQualifiedName,
-    GraphEdge, GraphExport, GraphNode, Resolver, SymbolId, SymbolTable,
-    DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_HUB_FRACTION,
-    DEFAULT_MAX_ITERATIONS,
+    CodeGraph, DEFAULT_CONVERGENCE, DEFAULT_DAMPING, DEFAULT_HUB_FRACTION, DEFAULT_MAX_ITERATIONS,
+    EdgeKind, FullyQualifiedName, GraphEdge, GraphExport, GraphNode, Resolver, SymbolId,
+    SymbolTable, export_graph_json, page_rank, top_n_indices,
 };
-pub use output::{render, RenderConfig};
+pub use output::{RenderConfig, render};
 pub use pipeline::{Pipeline, SliceMode};
 pub use tokenizer::count_tokens;
 pub use types::{
-    CallRef, ClassDef, EnumDef, Field, FileNode, FileRefs, FunctionDef, ImportRef,
-    InterfaceDef, Language, ModuleDef, Parameter, SourceLocation, StructDef, Symbol,
-    TypeAliasDef, Visibility,
+    CallRef, ClassDef, EnumDef, Field, FileNode, FileRefs, FunctionDef, ImportRef, InterfaceDef,
+    Language, ModuleDef, Parameter, SourceLocation, StructDef, Symbol, TypeAliasDef, Visibility,
 };

@@ -51,7 +51,10 @@ pub enum Error {
     Config(String),
 }
 
-#[allow(clippy::io_other_error, reason = "ignore::Error does not expose a real io::ErrorKind; using Other is the closest analogue")]
+#[allow(
+    clippy::io_other_error,
+    reason = "ignore::Error does not expose a real io::ErrorKind; using Other is the closest analogue"
+)]
 impl From<ignore::Error> for Error {
     fn from(err: ignore::Error) -> Self {
         let msg = err.to_string();
@@ -66,22 +69,63 @@ impl PartialEq for Error {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Io(a), Self::Io(b)) => a.kind() == b.kind(),
-            (Self::Parse { path: p1, message: m1 }, Self::Parse { path: p2, message: m2 })
-            | (Self::SecretDetection { path: p1, message: m1 }, Self::SecretDetection { path: p2, message: m2 })
-            | (Self::InvalidLocation { path: p1, message: m1 }, Self::InvalidLocation { path: p2, message: m2 }) => {
-                p1 == p2 && m1 == m2
-            }
-            (Self::FileTooLarge { path: p1, size: s1, max: mx1 }, Self::FileTooLarge { path: p2, size: s2, max: mx2 }) => {
-                p1 == p2 && s1 == s2 && mx1 == mx2
-            }
+            (
+                Self::Parse {
+                    path: p1,
+                    message: m1,
+                },
+                Self::Parse {
+                    path: p2,
+                    message: m2,
+                },
+            )
+            | (
+                Self::SecretDetection {
+                    path: p1,
+                    message: m1,
+                },
+                Self::SecretDetection {
+                    path: p2,
+                    message: m2,
+                },
+            )
+            | (
+                Self::InvalidLocation {
+                    path: p1,
+                    message: m1,
+                },
+                Self::InvalidLocation {
+                    path: p2,
+                    message: m2,
+                },
+            ) => p1 == p2 && m1 == m2,
+            (
+                Self::FileTooLarge {
+                    path: p1,
+                    size: s1,
+                    max: mx1,
+                },
+                Self::FileTooLarge {
+                    path: p2,
+                    size: s2,
+                    max: mx2,
+                },
+            ) => p1 == p2 && s1 == s2 && mx1 == mx2,
             (Self::UnsupportedLanguage(a), Self::UnsupportedLanguage(b))
             | (Self::Tokenizer(a), Self::Tokenizer(b))
             | (Self::InvalidPath(a), Self::InvalidPath(b))
             | (Self::Config(a), Self::Config(b)) => a == b,
             (Self::Timeout { elapsed: a }, Self::Timeout { elapsed: b }) => a == b,
-            (Self::BudgetExceeded { used: u1, limit: l1 }, Self::BudgetExceeded { used: u2, limit: l2 }) => {
-                u1 == u2 && l1 == l2
-            }
+            (
+                Self::BudgetExceeded {
+                    used: u1,
+                    limit: l1,
+                },
+                Self::BudgetExceeded {
+                    used: u2,
+                    limit: l2,
+                },
+            ) => u1 == u2 && l1 == l2,
             _ => false,
         }
     }
@@ -103,7 +147,10 @@ mod tests {
     #[test]
     fn io_neq_by_kind() {
         let a = Error::Io(std::io::Error::new(std::io::ErrorKind::NotFound, ""));
-        let b = Error::Io(std::io::Error::new(std::io::ErrorKind::PermissionDenied, ""));
+        let b = Error::Io(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "",
+        ));
         assert_ne!(a, b);
     }
 
@@ -120,5 +167,4 @@ mod tests {
         let err: Error = std::io::Error::new(std::io::ErrorKind::NotFound, "gone").into();
         assert!(matches!(err, Error::Io(_)));
     }
-
 }

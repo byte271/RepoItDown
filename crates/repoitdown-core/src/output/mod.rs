@@ -106,9 +106,7 @@ fn render_contract_view(nodes: &[FileNode], out: &mut String) {
         writeln!(out, "### `{}`\n", node.path.display()).unwrap();
 
         for sym in &exported {
-            let doc_suffix = sym
-                .docstring()
-                .map_or(String::new(), |d| format!(" — {d}"));
+            let doc_suffix = sym.docstring().map_or(String::new(), |d| format!(" — {d}"));
             writeln!(
                 out,
                 "- `{kind}` **{name}**{doc_suffix}",

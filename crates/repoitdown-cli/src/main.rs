@@ -55,7 +55,12 @@ fn main() -> ExitCode {
         .try_init();
 
     let mut pipeline = Pipeline::new();
-    if let Err(msg) = pipeline.configure(&cli.mode, cli.query.as_deref(), cli.max_tokens, !cli.no_collapse) {
+    if let Err(msg) = pipeline.configure(
+        &cli.mode,
+        cli.query.as_deref(),
+        cli.max_tokens,
+        !cli.no_collapse,
+    ) {
         eprintln!("error: {msg}");
         return ExitCode::FAILURE;
     }

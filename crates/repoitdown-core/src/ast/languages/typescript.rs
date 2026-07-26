@@ -1,11 +1,13 @@
 use std::path::Path;
 
-use crate::ast::common::{enclosing_function_name, parse_source, strip_quotes, ts_loc, ts_text, visit_nodes};
 use crate::ast::SymbolExtractor;
+use crate::ast::common::{
+    enclosing_function_name, parse_source, strip_quotes, ts_loc, ts_text, visit_nodes,
+};
 use crate::error::Result;
 use crate::types::{
-    CallRef, ClassDef, EnumDef, FileRefs, FunctionDef, ImportRef, InterfaceDef, Language,
-    Symbol, TypeAliasDef, Visibility,
+    CallRef, ClassDef, EnumDef, FileRefs, FunctionDef, ImportRef, InterfaceDef, Language, Symbol,
+    TypeAliasDef, Visibility,
 };
 
 #[derive(Default)]
@@ -74,8 +76,10 @@ fn module_specifier(node: tree_sitter::Node<'_>, source: &str) -> Option<String>
     let source_node = node
         .child_by_field_name("source")
         .or_else(|| first_child_of_kind(node, "string"))?;
-    let text = first_child_of_kind(source_node, "string_fragment")
-        .map_or_else(|| strip_quotes(ts_text(source_node, source)), |f| ts_text(f, source));
+    let text = first_child_of_kind(source_node, "string_fragment").map_or_else(
+        || strip_quotes(ts_text(source_node, source)),
+        |f| ts_text(f, source),
+    );
 
     (!text.is_empty()).then(|| text.to_owned())
 }
@@ -137,12 +141,12 @@ fn require_import(node: tree_sitter::Node<'_>, source: &str) -> Option<ImportRef
 
     let arguments = node.child_by_field_name("arguments")?;
     let literal = first_child_of_kind(arguments, "string")?;
-    let module = first_child_of_kind(literal, "string_fragment")
-        .map_or_else(|| strip_quotes(ts_text(literal, source)), |f| ts_text(f, source));
+    let module = first_child_of_kind(literal, "string_fragment").map_or_else(
+        || strip_quotes(ts_text(literal, source)),
+        |f| ts_text(f, source),
+    );
 
-    (!module.is_empty()).then(|| {
-        ImportRef::new(module, Vec::new(), node.start_position().row + 1)
-    })
+    (!module.is_empty()).then(|| ImportRef::new(module, Vec::new(), node.start_position().row + 1))
 }
 
 /// Reads the callee out of a TypeScript `call_expression`.
@@ -408,11 +412,7 @@ fn extract_interface(node: tree_sitter::Node<'_>, source: &str, path: &Path) -> 
     }))
 }
 
-fn extract_type_alias(
-    node: tree_sitter::Node<'_>,
-    source: &str,
-    path: &Path,
-) -> Option<Symbol> {
+fn extract_type_alias(node: tree_sitter::Node<'_>, source: &str, path: &Path) -> Option<Symbol> {
     let name_node = node.child_by_field_name("name")?;
     let name = ts_text(name_node, source).to_string();
     let loc = ts_loc(node, path);
@@ -539,8 +539,14 @@ mod tests {
 
     #[test]
     fn unexported_declaration_is_private() {
-        assert_eq!(visibility_of("function hidden() {}", "hidden"), Visibility::Private);
-        assert_eq!(visibility_of("class Hidden {}", "Hidden"), Visibility::Private);
+        assert_eq!(
+            visibility_of("function hidden() {}", "hidden"),
+            Visibility::Private
+        );
+        assert_eq!(
+            visibility_of("class Hidden {}", "Hidden"),
+            Visibility::Private
+        );
     }
 
     #[test]

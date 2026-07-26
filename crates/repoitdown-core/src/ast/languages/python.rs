@@ -1,11 +1,10 @@
 use std::path::Path;
 
-use crate::ast::common::{enclosing_function_name, parse_source, ts_loc, ts_text, visit_nodes};
 use crate::ast::SymbolExtractor;
+use crate::ast::common::{enclosing_function_name, parse_source, ts_loc, ts_text, visit_nodes};
 use crate::error::Result;
 use crate::types::{
-    CallRef, ClassDef, FileRefs, FunctionDef, ImportRef, Language, Parameter, Symbol,
-    Visibility,
+    CallRef, ClassDef, FileRefs, FunctionDef, ImportRef, Language, Parameter, Symbol, Visibility,
 };
 
 #[derive(Default)]
@@ -58,11 +57,7 @@ const CALL: &str = "call";
 const PYTHON_FUNCTION_KINDS: &[&str] = &["function_definition"];
 
 /// Collects `import a.b` / `import a.b as c` specifiers.
-fn collect_plain_import(
-    node: tree_sitter::Node<'_>,
-    source: &str,
-    out: &mut Vec<ImportRef>,
-) {
+fn collect_plain_import(node: tree_sitter::Node<'_>, source: &str, out: &mut Vec<ImportRef>) {
     let line = node.start_position().row + 1;
     let mut cursor = node.walk();
 
@@ -85,11 +80,7 @@ fn collect_plain_import(
 ///
 /// Relative imports keep their leading dots in `module` so the resolver can tell
 /// `from .sibling import x` apart from an absolute package of the same name.
-fn collect_from_import(
-    node: tree_sitter::Node<'_>,
-    source: &str,
-    out: &mut Vec<ImportRef>,
-) {
+fn collect_from_import(node: tree_sitter::Node<'_>, source: &str, out: &mut Vec<ImportRef>) {
     let line = node.start_position().row + 1;
     let Some(module_node) = node.child_by_field_name("module_name") else {
         return;
@@ -225,7 +216,9 @@ fn extract_params(node: tree_sitter::Node<'_>, source: &str) -> Vec<Parameter> {
     let mut params = Vec::new();
 
     for i in 0..params_node.child_count() {
-        let Some(child) = params_node.child(i) else { continue };
+        let Some(child) = params_node.child(i) else {
+            continue;
+        };
         if child.kind() == "identifier" {
             let name = ts_text(child, source).to_string();
             let type_ann = child

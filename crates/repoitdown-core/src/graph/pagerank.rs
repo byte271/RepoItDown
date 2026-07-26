@@ -134,7 +134,12 @@ pub fn page_rank<N, E>(
 ///
 /// Ties are broken by ascending index, which keeps the result deterministic.
 #[must_use]
-#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "pct is a fraction in [0,1]; count = floor(n * pct) bounded by [1, n] is always safe")]
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "pct is a fraction in [0,1]; count = floor(n * pct) bounded by [1, n] is always safe"
+)]
 pub fn top_n_indices(scores: &[f64], pct: f64) -> Vec<usize> {
     if scores.is_empty() {
         return Vec::new();
@@ -183,14 +188,24 @@ mod tests {
     #[test]
     fn empty_graph_returns_empty() {
         let g: DiGraph<(), (), u32> = DiGraph::new();
-        let scores = page_rank(&g, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, DEFAULT_CONVERGENCE);
+        let scores = page_rank(
+            &g,
+            DEFAULT_DAMPING,
+            DEFAULT_MAX_ITERATIONS,
+            DEFAULT_CONVERGENCE,
+        );
         assert!(scores.is_empty());
     }
 
     #[test]
     fn scores_sum_to_one() {
         let g = build_star(10);
-        let scores = page_rank(&g, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, DEFAULT_CONVERGENCE);
+        let scores = page_rank(
+            &g,
+            DEFAULT_DAMPING,
+            DEFAULT_MAX_ITERATIONS,
+            DEFAULT_CONVERGENCE,
+        );
         let sum: f64 = scores.iter().copied().sum();
         assert!(
             (sum - 1.0).abs() < 1e-3,
@@ -203,7 +218,12 @@ mod tests {
         // In a star where every leaf points to the center, the center has the
         // highest PageRank by a wide margin.
         let g = build_star(8);
-        let scores = page_rank(&g, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, DEFAULT_CONVERGENCE);
+        let scores = page_rank(
+            &g,
+            DEFAULT_DAMPING,
+            DEFAULT_MAX_ITERATIONS,
+            DEFAULT_CONVERGENCE,
+        );
         let center = 0; // first-added node
         let max_other = scores
             .iter()
@@ -225,7 +245,12 @@ mod tests {
         // Chain ends in a dangling node. Without dangling-mass redistribution,
         // total score would leak away across iterations.
         let g = build_chain(5);
-        let scores = page_rank(&g, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, DEFAULT_CONVERGENCE);
+        let scores = page_rank(
+            &g,
+            DEFAULT_DAMPING,
+            DEFAULT_MAX_ITERATIONS,
+            DEFAULT_CONVERGENCE,
+        );
         let sum: f64 = scores.iter().copied().sum();
         assert!(
             (sum - 1.0).abs() < 1e-3,
@@ -239,8 +264,18 @@ mod tests {
         // We can't observe iteration count directly, but we can verify the
         // scores are stable (re-running gives the same answer to high precision).
         let g = build_star(20);
-        let s1 = page_rank(&g, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, DEFAULT_CONVERGENCE);
-        let s2 = page_rank(&g, DEFAULT_DAMPING, DEFAULT_MAX_ITERATIONS, DEFAULT_CONVERGENCE);
+        let s1 = page_rank(
+            &g,
+            DEFAULT_DAMPING,
+            DEFAULT_MAX_ITERATIONS,
+            DEFAULT_CONVERGENCE,
+        );
+        let s2 = page_rank(
+            &g,
+            DEFAULT_DAMPING,
+            DEFAULT_MAX_ITERATIONS,
+            DEFAULT_CONVERGENCE,
+        );
         for (a, b) in s1.iter().zip(s2.iter()) {
             assert!((a - b).abs() < 1e-9, "non-deterministic result");
         }

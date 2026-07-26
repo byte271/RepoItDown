@@ -1,7 +1,9 @@
 use std::path::Path;
 
-use crate::ast::common::{enclosing_function_name, parse_source, strip_quotes, ts_loc, ts_text, visit_nodes};
 use crate::ast::SymbolExtractor;
+use crate::ast::common::{
+    enclosing_function_name, parse_source, strip_quotes, ts_loc, ts_text, visit_nodes,
+};
 use crate::error::Result;
 use crate::types::{
     CallRef, FileRefs, FunctionDef, ImportRef, InterfaceDef, Language, StructDef, Symbol,
@@ -166,11 +168,7 @@ fn extract_fn(node: tree_sitter::Node<'_>, source: &str, path: &Path) -> Option<
     }))
 }
 
-fn extract_type_spec(
-    node: tree_sitter::Node<'_>,
-    source: &str,
-    path: &Path,
-) -> Option<Symbol> {
+fn extract_type_spec(node: tree_sitter::Node<'_>, source: &str, path: &Path) -> Option<Symbol> {
     let name_node = node.child_by_field_name("name")?;
     let name = ts_text(name_node, source).to_string();
     let loc = ts_loc(node, path);
@@ -213,9 +211,7 @@ mod tests {
     #[test]
     fn parses_function() {
         let source = "package main\n\nfunc main() {\n\tprintln(\"hello\")\n}";
-        let syms = GoExtractor
-            .extract(source, Path::new("main.go"))
-            .unwrap();
+        let syms = GoExtractor.extract(source, Path::new("main.go")).unwrap();
         assert_eq!(syms[0].name(), "main");
         assert_eq!(syms[0].kind_label(), "function");
     }
@@ -223,19 +219,16 @@ mod tests {
     #[test]
     fn parses_struct_type() {
         let source = "package models\n\ntype User struct {\n\tName string\n\tAge  int\n}";
-        let syms = GoExtractor
-            .extract(source, Path::new("user.go"))
-            .unwrap();
+        let syms = GoExtractor.extract(source, Path::new("user.go")).unwrap();
         assert_eq!(syms[0].name(), "User");
         assert_eq!(syms[0].kind_label(), "struct");
     }
 
     #[test]
     fn parses_interface_type() {
-        let source = "package repo\n\ntype Repository interface {\n\tFind(id int) (*Entity, error)\n}";
-        let syms = GoExtractor
-            .extract(source, Path::new("repo.go"))
-            .unwrap();
+        let source =
+            "package repo\n\ntype Repository interface {\n\tFind(id int) (*Entity, error)\n}";
+        let syms = GoExtractor.extract(source, Path::new("repo.go")).unwrap();
         assert_eq!(syms[0].name(), "Repository");
         assert_eq!(syms[0].kind_label(), "interface");
     }
@@ -243,16 +236,12 @@ mod tests {
     #[test]
     fn parses_method() {
         let source = "package server\n\nfunc (s *Server) Start() error {\n\treturn nil\n}";
-        let syms = GoExtractor
-            .extract(source, Path::new("server.go"))
-            .unwrap();
+        let syms = GoExtractor.extract(source, Path::new("server.go")).unwrap();
         assert_eq!(syms[0].name(), "Start");
     }
 
     fn visibility_of(source: &str, name: &str) -> Visibility {
-        let syms = GoExtractor
-            .extract(source, Path::new("pkg.go"))
-            .unwrap();
+        let syms = GoExtractor.extract(source, Path::new("pkg.go")).unwrap();
         let Some(sym) = syms.iter().find(|s| s.name() == name) else {
             panic!("symbol {name} not extracted");
         };

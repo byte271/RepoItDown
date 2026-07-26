@@ -95,10 +95,10 @@ pub fn parse_source(
             path: path.to_path_buf(),
             message: format!("failed to set grammar: {e}"),
         })?;
-    parser.parse(source, None).ok_or_else(|| {
-        crate::error::Error::Parse {
+    parser
+        .parse(source, None)
+        .ok_or_else(|| crate::error::Error::Parse {
             path: path.to_path_buf(),
             message: "tree-sitter returned null tree".into(),
-        }
-    })
+        })
 }

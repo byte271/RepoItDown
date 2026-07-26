@@ -79,8 +79,11 @@ impl SlicePlan {
     /// Returns the token cost of the currently chosen level.
     #[must_use]
     pub fn current_cost(&self) -> usize {
-        self.level
-            .cost(self.full_tokens, self.skeleton_tokens, self.signature_tokens)
+        self.level.cost(
+            self.full_tokens,
+            self.skeleton_tokens,
+            self.signature_tokens,
+        )
     }
 
     /// Returns the highest level this plan can degrade to under the hub
@@ -122,7 +125,11 @@ pub fn allocate(plans: &mut [SlicePlan], budget: usize) {
 
         // Try each level in decreasing order of cost.
         let chosen = pick_level(plan, remaining, min_level);
-        let cost = chosen.cost(plan.full_tokens, plan.skeleton_tokens, plan.signature_tokens);
+        let cost = chosen.cost(
+            plan.full_tokens,
+            plan.skeleton_tokens,
+            plan.signature_tokens,
+        );
         plan.level = chosen;
         // Defensive: if cost exceeds remaining (shouldn't happen given
         // pick_level's logic), still subtract what we have.
@@ -138,7 +145,11 @@ fn pick_level(plan: &SlicePlan, remaining: usize, min_level: SliceLevel) -> Slic
     let sig = plan.signature_tokens;
 
     // Order from highest to lowest retention.
-    let candidates = [SliceLevel::Full, SliceLevel::Skeleton, SliceLevel::Signature];
+    let candidates = [
+        SliceLevel::Full,
+        SliceLevel::Skeleton,
+        SliceLevel::Signature,
+    ];
 
     for &level in &candidates {
         if level < min_level {
@@ -257,7 +268,14 @@ mod tests {
         })
     }
 
-    fn plan(idx: usize, full: usize, skel: usize, sig: usize, importance: f64, is_hub: bool) -> SlicePlan {
+    fn plan(
+        idx: usize,
+        full: usize,
+        skel: usize,
+        sig: usize,
+        importance: f64,
+        is_hub: bool,
+    ) -> SlicePlan {
         SlicePlan {
             file_index: idx,
             full_tokens: full,
@@ -289,8 +307,15 @@ mod tests {
             plan(1, 500, 250, 10, 0.1, false),
         ];
         allocate(&mut plans, 150);
-        assert_eq!(plans[0].level, SliceLevel::Full, "high-value plan stays Full");
-        assert!(plans[1].level <= SliceLevel::Signature, "low-value plan degrades");
+        assert_eq!(
+            plans[0].level,
+            SliceLevel::Full,
+            "high-value plan stays Full"
+        );
+        assert!(
+            plans[1].level <= SliceLevel::Signature,
+            "low-value plan degrades"
+        );
     }
 
     #[test]
@@ -336,7 +361,9 @@ mod tests {
                 assert_eq!(total, 0);
             } else {
                 assert!(
-                    total <= budget || p.iter().any(|plan| plan.is_hub && plan.level == SliceLevel::Skeleton),
+                    total <= budget
+                        || p.iter()
+                            .any(|plan| plan.is_hub && plan.level == SliceLevel::Skeleton),
                     "budget={budget}, total={total} (hub protection may force slight overflow)"
                 );
             }

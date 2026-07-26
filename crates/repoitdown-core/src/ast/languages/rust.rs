@@ -1,11 +1,11 @@
 use std::path::Path;
 
-use crate::ast::common::{enclosing_function_name, parse_source, ts_loc, ts_text, visit_nodes};
 use crate::ast::SymbolExtractor;
+use crate::ast::common::{enclosing_function_name, parse_source, ts_loc, ts_text, visit_nodes};
 use crate::error::Result;
 use crate::types::{
-    CallRef, EnumDef, Field, FileRefs, FunctionDef, ImportRef, InterfaceDef, Language,
-    ModuleDef, StructDef, Symbol, TypeAliasDef, Visibility,
+    CallRef, EnumDef, Field, FileRefs, FunctionDef, ImportRef, InterfaceDef, Language, ModuleDef,
+    StructDef, Symbol, TypeAliasDef, Visibility,
 };
 
 #[derive(Default)]
@@ -110,9 +110,10 @@ fn collect_use_tree(
             }
         }
         "scoped_use_list" => {
-            let next = node
-                .child_by_field_name("path")
-                .map_or_else(|| prefix.to_owned(), |p| join_path(prefix, ts_text(p, source)));
+            let next = node.child_by_field_name("path").map_or_else(
+                || prefix.to_owned(),
+                |p| join_path(prefix, ts_text(p, source)),
+            );
             if let Some(list) = node.child_by_field_name("list") {
                 collect_use_tree(list, source, &next, line, out);
             }
@@ -352,11 +353,7 @@ fn extract_trait(node: tree_sitter::Node<'_>, source: &str, path: &Path) -> Opti
     }))
 }
 
-fn extract_type_alias(
-    node: tree_sitter::Node<'_>,
-    source: &str,
-    path: &Path,
-) -> Option<Symbol> {
+fn extract_type_alias(node: tree_sitter::Node<'_>, source: &str, path: &Path) -> Option<Symbol> {
     let name_node = node.child_by_field_name("name")?;
     let name = ts_text(name_node, source).to_string();
     let vis = extract_visibility(node, source);
@@ -495,9 +492,7 @@ mod tests {
     #[test]
     fn parses_function() {
         let source = "fn main() {\n    println!(\"hello\");\n}";
-        let syms = RustExtractor
-            .extract(source, Path::new("main.rs"))
-            .unwrap();
+        let syms = RustExtractor.extract(source, Path::new("main.rs")).unwrap();
         assert_eq!(syms.len(), 1);
         assert_eq!(syms[0].name(), "main");
         assert_eq!(syms[0].kind_label(), "function");
@@ -506,17 +501,14 @@ mod tests {
     #[test]
     fn parses_pub_function() {
         let source = "pub fn connect(addr: &str) -> Result<()> {\n    Ok(())\n}";
-        let syms = RustExtractor
-            .extract(source, Path::new("lib.rs"))
-            .unwrap();
+        let syms = RustExtractor.extract(source, Path::new("lib.rs")).unwrap();
         assert_eq!(syms[0].name(), "connect");
         assert_eq!(syms[0].visibility(), Visibility::Public);
     }
 
     #[test]
     fn parses_struct_with_derives() {
-        let source =
-            "#[derive(Debug, Clone)]\npub struct Config {\n    pub host: String,\n    port: u16,\n}";
+        let source = "#[derive(Debug, Clone)]\npub struct Config {\n    pub host: String,\n    port: u16,\n}";
         let syms = RustExtractor
             .extract(source, Path::new("config.rs"))
             .unwrap();
@@ -545,9 +537,7 @@ mod tests {
     #[test]
     fn parses_trait() {
         let source = "pub trait Repository {\n    fn find(&self, id: u64) -> Option<Entity>;\n}";
-        let syms = RustExtractor
-            .extract(source, Path::new("repo.rs"))
-            .unwrap();
+        let syms = RustExtractor.extract(source, Path::new("repo.rs")).unwrap();
         assert_eq!(syms[0].name(), "Repository");
         assert_eq!(syms[0].kind_label(), "interface");
     }
@@ -555,9 +545,7 @@ mod tests {
     #[test]
     fn parses_mod_declaration() {
         let source = "pub mod database;";
-        let syms = RustExtractor
-            .extract(source, Path::new("lib.rs"))
-            .unwrap();
+        let syms = RustExtractor.extract(source, Path::new("lib.rs")).unwrap();
         assert_eq!(syms[0].name(), "database");
         assert_eq!(syms[0].kind_label(), "module");
     }

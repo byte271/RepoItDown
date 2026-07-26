@@ -20,9 +20,8 @@ impl RepoWalker {
     }
 
     pub fn walk(&self, root: &Path) -> Result<IngestionResult> {
-        let canonical = fs::canonicalize(root).map_err(|e| {
-            Error::InvalidPath(format!("cannot resolve {}: {e}", root.display()))
-        })?;
+        let canonical = fs::canonicalize(root)
+            .map_err(|e| Error::InvalidPath(format!("cannot resolve {}: {e}", root.display())))?;
 
         let filter = IgnoreFilter::new(&canonical);
         let paths = filter.walk()?;
@@ -34,10 +33,7 @@ impl RepoWalker {
             match self.process_file(path, &canonical) {
                 Ok(entry) => files.push(entry),
                 Err(reason) => skipped.push(SkippedFile {
-                    path: path
-                        .strip_prefix(&canonical)
-                        .unwrap_or(path)
-                        .to_path_buf(),
+                    path: path.strip_prefix(&canonical).unwrap_or(path).to_path_buf(),
                     reason,
                 }),
             }
@@ -46,7 +42,12 @@ impl RepoWalker {
         let truncated_count = paths.len().saturating_sub(limit);
         let redaction_count = secrets::scan_and_redact(&mut files);
 
-        Ok(IngestionResult::new(files, skipped, redaction_count, truncated_count))
+        Ok(IngestionResult::new(
+            files,
+            skipped,
+            redaction_count,
+            truncated_count,
+        ))
     }
 
     fn process_file(&self, path: &Path, root: &Path) -> Result<FileEntry> {
@@ -73,7 +74,12 @@ impl RepoWalker {
         let source = fs::read_to_string(path).map_err(Error::Io)?;
         let language = detect_language(path, &source);
 
-        Ok(FileEntry::new(rel.to_path_buf(), language, source, meta.len()))
+        Ok(FileEntry::new(
+            rel.to_path_buf(),
+            language,
+            source,
+            meta.len(),
+        ))
     }
 
     fn validate_path(&self, path: &Path) -> Result<()> {
@@ -144,13 +150,19 @@ mod tests {
     #[test]
     fn detect_shebang_python() {
         let source = "#!/usr/bin/env python3\nprint('hi')";
-        assert_eq!(detect_language(Path::new("script"), source), Language::Python);
+        assert_eq!(
+            detect_language(Path::new("script"), source),
+            Language::Python
+        );
     }
 
     #[test]
     fn detect_shebang_node() {
         let source = "#!/usr/bin/env node\nconsole.log('hi')";
-        assert_eq!(detect_language(Path::new("script"), source), Language::JavaScript);
+        assert_eq!(
+            detect_language(Path::new("script"), source),
+            Language::JavaScript
+        );
     }
 
     #[test]

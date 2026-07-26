@@ -3,7 +3,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-
 use crate::error::{Error, Result};
 
 /// Programming language detected from file extension or shebang.
@@ -303,7 +302,9 @@ pub enum Symbol {
 macro_rules! from_def_for_symbol {
     ($variant:ident, $type:ty) => {
         impl From<$type> for Symbol {
-            fn from(v: $type) -> Self { Self::$variant(v) }
+            fn from(v: $type) -> Self {
+                Self::$variant(v)
+            }
         }
     };
 }
@@ -641,12 +642,20 @@ mod tests {
 
     #[test]
     fn file_node() {
-        let node = FileNode::new(PathBuf::from("src/main.rs"), Language::Rust, "fn main() {}".into());
+        let node = FileNode::new(
+            PathBuf::from("src/main.rs"),
+            Language::Rust,
+            "fn main() {}".into(),
+        );
         assert_eq!(node.directory(), std::path::Path::new("src"));
         assert_eq!(node.token_count, 0);
         assert!(!node.has_redactions);
 
-        let root = FileNode::new(PathBuf::from("README.md"), Language::Other("md".into()), String::new());
+        let root = FileNode::new(
+            PathBuf::from("README.md"),
+            Language::Other("md".into()),
+            String::new(),
+        );
         assert_eq!(root.directory(), std::path::Path::new("."));
     }
 }

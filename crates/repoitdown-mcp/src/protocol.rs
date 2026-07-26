@@ -25,7 +25,11 @@ pub struct JsonrpcError {
 
 impl JsonrpcError {
     pub fn new(code: i64, message: impl Into<String>) -> Self {
-        Self { code, message: message.into(), data: None }
+        Self {
+            code,
+            message: message.into(),
+            data: None,
+        }
     }
 }
 
@@ -58,9 +62,7 @@ pub fn read_message(reader: &mut dyn BufRead) -> io::Result<Option<String>> {
     if content_length > MAX_CONTENT_LENGTH {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            format!(
-                "Content-Length {content_length} exceeds maximum {MAX_CONTENT_LENGTH}"
-            ),
+            format!("Content-Length {content_length} exceeds maximum {MAX_CONTENT_LENGTH}"),
         ));
     }
 

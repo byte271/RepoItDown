@@ -30,7 +30,7 @@
 //! ```
 
 use pyo3::prelude::*;
-use repoitdown_core::{export_graph_json, Pipeline};
+use repoitdown_core::{Pipeline, export_graph_json};
 
 /// Python wrapper around `repoitdown-core::Pipeline`.
 ///
@@ -102,14 +102,14 @@ impl RepoItDown {
     #[pyo3(signature = (repo_path))]
     fn export_graph(&self, repo_path: &str) -> PyResult<Option<String>> {
         use repoitdown_core::ast::ParserPool;
-        use repoitdown_core::ingestion::walker::RepoWalker;
         use repoitdown_core::ingestion::IngestionConfig;
+        use repoitdown_core::ingestion::walker::RepoWalker;
 
         let repo_path = std::path::PathBuf::from(repo_path);
         let walker = RepoWalker::new(IngestionConfig::default());
-        let result = walker.walk(&repo_path).map_err(|e| {
-            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
-        })?;
+        let result = walker
+            .walk(&repo_path)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
         let pool = ParserPool::new();
         let files = pool.parse_all(&result.files);

@@ -10,20 +10,34 @@ use crate::types::{FunctionDef, Language, SourceLocation, Symbol};
 static PATTERNS: LazyLock<Vec<(Regex, &str)>> = LazyLock::new(|| {
     [
         (r"(?m)^\s*(?:pub\s+)?fn\s+(\w+)", "function"),
-        (r"(?m)^\s*(?:pub\s+)?func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)", "function"),
+        (
+            r"(?m)^\s*(?:pub\s+)?func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)",
+            "function",
+        ),
         (r"(?m)^\s*def\s+(\w+)", "function"),
-        (r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)", "function"),
+        (
+            r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)",
+            "function",
+        ),
         (r"(?m)^\s*(?:pub\s+)?struct\s+(\w+)", "struct"),
         (r"(?m)^\s*(?:pub\s+)?enum\s+(\w+)", "enum"),
         (r"(?m)^\s*(?:pub\s+)?trait\s+(\w+)", "interface"),
-        (r"(?m)^\s*(?:export\s+)?(?:abstract\s+)?class\s+(\w+)", "class"),
+        (
+            r"(?m)^\s*(?:export\s+)?(?:abstract\s+)?class\s+(\w+)",
+            "class",
+        ),
         (r"(?m)^\s*(?:export\s+)?interface\s+(\w+)", "interface"),
         (r"(?m)^\s*(?:pub\s+)?type\s+(\w+)", "type alias"),
         (r"(?m)^\s*(?:export\s+)?type\s+(\w+)", "type alias"),
         (r"(?m)^\s*(?:pub\s+)?mod\s+(\w+)", "module"),
     ]
     .iter()
-    .map(|(p, kind)| (Regex::new(p).expect("built-in fallback regex failed to compile"), *kind))
+    .map(|(p, kind)| {
+        (
+            Regex::new(p).expect("built-in fallback regex failed to compile"),
+            *kind,
+        )
+    })
     .collect()
 });
 
